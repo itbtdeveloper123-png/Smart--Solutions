@@ -1,0 +1,23 @@
+# Dependencies
+vendor/
+node_modules/
+
+# Data & Cache
+data/form_solver.db
+data/*.db
+*.cache
+tmp/
+
+# Environment / Secrets
+.env
+config/ai_config.php
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
