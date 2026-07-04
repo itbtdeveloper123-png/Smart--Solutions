@@ -1,0 +1,13 @@
+{
+  "name": "form-solver",
+  "description": "AI Google Form Auto-Answer with Telegram Bot Auth",
+  "scripts": {
+    "start": "php -S 0.0.0.0:$PORT -t public"
+  },
+  "env": {
+    "PORT": {
+      "description": "Port for PHP server",
+      "value": "8080"
+    }
+  }
+}
