@@ -42,25 +42,22 @@ class Auth
     
     /**
      * Login with Telegram key (first time or key-based re-login)
+     * Now works with Google Apps Script Bot — validates key format, not DB record
      */
     private function loginWithKey(string $username, string $key): array
     {
-        // 1) Check if this Telegram key exists and is valid
-        $stmt = $this->db->prepare('SELECT * FROM telegram_keys WHERE access_key = ?');
-        $stmt->execute([$key]);
-        $telegramKey = $stmt->fetch();
-        
-        if (!$telegramKey) {
-            throw new RuntimeException('Key មិនត្រឹមត្រូវ! សូមទទួល Key ពី Telegram Bot។');
+        // Validate key format: FS-XXXXXXXX (16 hex chars)
+        if (!preg_match('/^FS-[A-Fa-f0-9]{16}$/', $key)) {
+            throw new RuntimeException('Key មិនត្រឹមត្រូវ! សូមទទួល Key ពី Telegram Bot (@' . 'SmartSolutionsSupport_bot' . ')');
         }
         
-        // 2) Check if user already exists with this username
+        // Check if user already exists with this username
         $stmt = $this->db->prepare('SELECT * FROM users WHERE username = ?');
         $stmt->execute([$username]);
         $user = $stmt->fetch();
         
         if ($user) {
-            // Existing user — verify key matches or update
+            // Existing user — update key & last login
             if ($user['access_key'] !== $key) {
                 $this->db->prepare('UPDATE users SET access_key = ? WHERE id = ?')
                          ->execute([$key, $user['id']]);
@@ -68,7 +65,7 @@ class Auth
             $this->db->prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?')
                      ->execute([$user['id']]);
         } else {
-            // 3) New user — register with the Telegram key
+            // New user — register with 25 free credits
             $stmt = $this->db->prepare('INSERT INTO users (username, access_key, credits) VALUES (?, ?, 25)');
             $stmt->execute([$username, $key]);
             $user = [
@@ -79,9 +76,9 @@ class Auth
             ];
         }
         
-        // Mark Telegram key as used
-        $this->db->prepare('UPDATE telegram_keys SET is_used = 1 WHERE id = ?')
-                 ->execute([$telegramKey['id']]);
+        // Also save to telegram_keys if not exists (for tracking)
+        $stmt = $this->db->prepare('INSERT OR IGNORE INTO telegram_keys (telegram_id, access_key, username, is_used) VALUES (?, ?, ?, 1)');
+        $stmt->execute(['web_' . $username, $key, $username]);
         
         return $this->createSession($user);
     }
