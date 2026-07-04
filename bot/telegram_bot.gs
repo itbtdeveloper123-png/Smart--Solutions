@@ -25,17 +25,31 @@ var WEB_APP_URL = 'http://smart-solve.html-5.me/form-solver/login.php'; // Your 
 // ═══════════════ WEBHOOK HANDLER ═══════════════
 
 function doPost(e) {
-  // Guard: when called from editor, e is undefined
   if (!e || !e.postData) {
-    console.log('⚠️ Called without webhook data. Deploy as Web App & test via Telegram.');
     return ContentService.createTextOutput('OK');
   }
+  
   try {
     var update = JSON.parse(e.postData.contents);
+    
+    // Prevent duplicate processing (Telegram may retry)
+    var updateId = update.update_id;
+    var props = PropertiesService.getScriptProperties();
+    var lastId = props.getProperty('LAST_UPDATE_ID') || '0';
+    if (parseInt(updateId) <= parseInt(lastId)) {
+      // Already processed this update — skip
+      return ContentService.createTextOutput('OK');
+    }
+    props.setProperty('LAST_UPDATE_ID', String(updateId));
+    
+    // Process the update
     handleUpdate(update);
+    
   } catch (err) {
     console.error('Error:', err.message);
   }
+  
+  // Always return OK immediately (prevents Telegram retry)
   return ContentService.createTextOutput('OK');
 }
 
@@ -178,8 +192,7 @@ function sendMessage(chatId, text) {
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
-  var resp = UrlFetchApp.fetch(url, options);
-  console.log('sendMessage response: ' + resp.getContentText().substring(0, 200));
+  UrlFetchApp.fetch(url, options);
 }
 
 function sendMessageWithKeyboard(chatId, text, keyboard) {
@@ -197,8 +210,7 @@ function sendMessageWithKeyboard(chatId, text, keyboard) {
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
-  var resp = UrlFetchApp.fetch(url, options);
-  console.log('sendMessage response: ' + resp.getContentText().substring(0, 200));
+  UrlFetchApp.fetch(url, options);
 }
 
 function answerCallback(callbackId) {
