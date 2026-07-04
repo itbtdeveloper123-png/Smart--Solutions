@@ -1,0 +1,5 @@
+RewriteEngine On
+
+# Redirect all requests to public/ folder
+RewriteCond %{REQUEST_URI} !^/form-solver/public/
+RewriteRule ^(.*)$ /form-solver/public/$1 [L]
