@@ -18,19 +18,18 @@
  */
 
 // ═══════════════ CONFIG ═══════════════
-var BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE';        // From @BotFather
+var BOT_TOKEN = '8746347891:AAFgWi5OY6Bdu-7POzF6hkbskCgcW2cH8sA';        // From @BotFather
 var BOT_USERNAME = 'SmartSolutionsSupport_bot'; // Without @
-var WEB_APP_URL = 'https://yourdomain.com/login.php'; // Your login page
+var WEB_APP_URL = 'http://smart-solve.html-5.me/form-solver/login.php'; // Your login page
 
 // ═══════════════ WEBHOOK HANDLER ═══════════════
 
 function doPost(e) {
-  // Guard: when running manually in editor, e is undefined
+  // Guard: when called from editor, e is undefined
   if (!e || !e.postData) {
-    console.log('⚠️ doPost() called without webhook data. Deploy as Web App and use Telegram to test.');
-    return ContentService.createTextOutput('Bot is running! Send /start on Telegram to test.');
+    console.log('⚠️ Called without webhook data. Deploy as Web App & test via Telegram.');
+    return ContentService.createTextOutput('OK');
   }
-  
   try {
     var update = JSON.parse(e.postData.contents);
     handleUpdate(update);
@@ -44,31 +43,11 @@ function doGet(e) {
   return ContentService.createTextOutput('Form Solver Bot is running! 🤖');
 }
 
-/**
- * Test function — run this directly from editor to verify setup
- * Click "Run" → select "testBot" → check execution log
- */
 function testBot() {
-  console.log('🔍 Testing Bot Configuration...');
-  console.log('BOT_TOKEN: ' + (BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE' ? '✅ Set' : '❌ Not set!'));
-  console.log('BOT_USERNAME: ' + BOT_USERNAME);
-  console.log('WEB_APP_URL: ' + WEB_APP_URL);
-  
-  // Test Telegram API connection
-  try {
-    var url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/getMe';
-    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-    var data = JSON.parse(resp.getContentText());
-    if (data.ok) {
-      console.log('✅ Connected to Telegram! Bot: @' + data.result.username);
-    } else {
-      console.log('❌ Telegram API Error: ' + data.description);
-    }
-  } catch (err) {
-    console.log('❌ Cannot connect to Telegram: ' + err.message);
-  }
-  
-  console.log('✅ Test complete. Deploy as Web App to activate.');
+  console.log('BOT_TOKEN: ' + (BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE' ? '✅' : '❌'));
+  var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/getMe', { muteHttpExceptions: true });
+  var data = JSON.parse(resp.getContentText());
+  console.log(data.ok ? '✅ Bot: @' + data.result.username : '❌ ' + data.description);
 }
 
 // ═══════════════ UPDATE HANDLER ═══════════════
@@ -88,7 +67,7 @@ function handleUpdate(update) {
       handleGetKey(chatId, telegramId, firstName);
     } else if (text === '/help') {
       sendMessage(chatId, 
-        '🤖 *Form Solver Bot*\n\n' +
+        '🤖 <b>Form Solver Bot</b>\n\n' +
         '/start — ទទួល Key ថ្មីសម្រាប់ចូលប្រើ\n' +
         '/key — មើល Key របស់អ្នកឡើងវិញ\n' +
         '/help — ជំនួយ\n\n' +
@@ -144,25 +123,23 @@ function handleStart(chatId, telegramId, firstName, username) {
     }));
   }
   
-  // Send welcome message
-  var message = 
-    '👋 សួស្តី *' + escapeMarkdown(firstName) + '*!\n\n' +
-    '🔑 *Key របស់អ្នក៖*\n`' + key + '`\n\n' +
-    '📋 *របៀបប្រើ៖*\n' +
-    '1\\. ចម្លង Key ខាងលើ\n' +
-    '2\\. ចូលទៅកាន់ [Web App](' + WEB_APP_URL + ')\n' +
-    '3\\. បញ្ចូលឈ្មោះ \\+ Key ដើម្បី Login\n\n' +
-    '🎁 ទទួលបាន *25 Credits* ឥតគិតថ្លៃ!\n' +
+  // Send welcome message (HTML format — works safely with all languages)
+  var message =
+    '👋 សួស្តី <b>' + firstName + '</b>!\n\n' +
+    '🔑 <b>Key របស់អ្នក៖</b>\n<code>' + key + '</code>\n\n' +
+    '📋 <b>របៀបប្រើ៖</b>\n' +
+    '1. ចម្លង Key ខាងលើ\n' +
+    '2. ចូលទៅកាន់ ' + WEB_APP_URL + '\n' +
+    '3. បញ្ចូលឈ្មោះ + Key ដើម្បី Login\n\n' +
+    '🎁 ទទួលបាន <b>25 Credits</b> ឥតគិតថ្លៃ!\n' +
     '💡 ប្រើ /key ដើម្បីមើល Key ឡើងវិញ';
-  
-  // Inline keyboard with quick actions
+
   var keyboard = {
     inline_keyboard: [
-      [{ text: '🔑 ចម្លង Key', callback_data: 'copy_key' }],
       [{ text: '🌐 បើក Web App', url: WEB_APP_URL }]
     ]
   };
-  
+
   sendMessageWithKeyboard(chatId, message, keyboard);
 }
 
@@ -173,7 +150,7 @@ function handleGetKey(chatId, telegramId, firstName) {
   var key = props.getProperty('USER_' + telegramId);
   
   if (key) {
-    var message = '🔑 *Key របស់អ្នក៖*\n`' + key + '`\n\nចម្លង Key នេះទៅប្រើក្នុង Web App ។';
+    var message = '🔑 <b>Key របស់អ្នក៖</b>\n<code>' + key + '</code>\n\nចម្លង Key នេះទៅប្រើក្នុង Web App ។';
     var keyboard = {
       inline_keyboard: [
         [{ text: '🌐 បើក Web App', url: WEB_APP_URL }]
@@ -190,40 +167,38 @@ function handleGetKey(chatId, telegramId, firstName) {
 function sendMessage(chatId, text) {
   var url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage';
   var payload = {
-    chat_id: chatId,
+    chat_id: String(chatId),
     text: text,
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
     disable_web_page_preview: true
   };
-  
   var options = {
     method: 'post',
     contentType: 'application/json',
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
-  
-  UrlFetchApp.fetch(url, options);
+  var resp = UrlFetchApp.fetch(url, options);
+  console.log('sendMessage response: ' + resp.getContentText().substring(0, 200));
 }
 
 function sendMessageWithKeyboard(chatId, text, keyboard) {
   var url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage';
   var payload = {
-    chat_id: chatId,
+    chat_id: String(chatId),
     text: text,
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
     disable_web_page_preview: true,
     reply_markup: JSON.stringify(keyboard)
   };
-  
   var options = {
     method: 'post',
     contentType: 'application/json',
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
-  
-  UrlFetchApp.fetch(url, options);
+  var resp = UrlFetchApp.fetch(url, options);
+  console.log('sendMessage response: ' + resp.getContentText().substring(0, 200));
 }
 
 function answerCallback(callbackId) {
