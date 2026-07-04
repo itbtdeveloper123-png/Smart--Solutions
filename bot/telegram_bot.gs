@@ -25,6 +25,12 @@ var WEB_APP_URL = 'https://yourdomain.com/login.php'; // Your login page
 // ═══════════════ WEBHOOK HANDLER ═══════════════
 
 function doPost(e) {
+  // Guard: when running manually in editor, e is undefined
+  if (!e || !e.postData) {
+    console.log('⚠️ doPost() called without webhook data. Deploy as Web App and use Telegram to test.');
+    return ContentService.createTextOutput('Bot is running! Send /start on Telegram to test.');
+  }
+  
   try {
     var update = JSON.parse(e.postData.contents);
     handleUpdate(update);
@@ -36,6 +42,33 @@ function doPost(e) {
 
 function doGet(e) {
   return ContentService.createTextOutput('Form Solver Bot is running! 🤖');
+}
+
+/**
+ * Test function — run this directly from editor to verify setup
+ * Click "Run" → select "testBot" → check execution log
+ */
+function testBot() {
+  console.log('🔍 Testing Bot Configuration...');
+  console.log('BOT_TOKEN: ' + (BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE' ? '✅ Set' : '❌ Not set!'));
+  console.log('BOT_USERNAME: ' + BOT_USERNAME);
+  console.log('WEB_APP_URL: ' + WEB_APP_URL);
+  
+  // Test Telegram API connection
+  try {
+    var url = 'https://api.telegram.org/bot' + BOT_TOKEN + '/getMe';
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    var data = JSON.parse(resp.getContentText());
+    if (data.ok) {
+      console.log('✅ Connected to Telegram! Bot: @' + data.result.username);
+    } else {
+      console.log('❌ Telegram API Error: ' + data.description);
+    }
+  } catch (err) {
+    console.log('❌ Cannot connect to Telegram: ' + err.message);
+  }
+  
+  console.log('✅ Test complete. Deploy as Web App to activate.');
 }
 
 // ═══════════════ UPDATE HANDLER ═══════════════
